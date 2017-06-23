@@ -1,0 +1,274 @@
+<!doctype html>
+<html class="no-js" lang="ko">
+    <head >
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+
+
+        <script type="text/javascript" src="./bower_components/twemoji/2/twemoji.min.js"></script>
+        <script type="text/javascript" src="./bower_components/jquery/dist/jquery.min.js"></script>
+        <script type="text/javascript" src="./bower_components/punycode/punycode.js"></script>
+
+        <style type="text/css">
+            textarea {
+                width : 100%;
+                height : 100px;
+            }
+
+            #dstEl {
+                width : 100%;
+                height : 100px;   
+                border : solid 1px #d3d3d3;
+            }
+
+            .emoji {
+                width : 16px;
+            }
+
+            input[type="text"] {
+                width : 400px;
+            }
+
+            body {
+                padding : 15px 15px;
+            }
+        </style>
+    </head>
+
+    <body >
+        
+            <pre>
+            1. src Text에 emoji를 입력하거나 load sample을 통해서 입력합니다. 
+            2. sample 은 https://github.com/twitter/twemoji/issues/169 기준입니다. (브라우져에 따라서 지원되는 항목이 다름니다.)
+            3. generate Regexp 를 눌러서 정규식을 생성합니다.
+            4. Test Generate Regexp를 눌러서 생성된 정규식을 테스트합니다. ( 모두다 사라져야 정상입니다.)
+            5. interval 을 체크할 경우 하나씩 순차적으로 테스트하고 삭제합니다. 
+            5. src Text에 추가적으로 다른 이모티콘을 추가해서 정규식을 테스트할수 있습니다. 
+            </pre>
+        
+        <div> 
+            src Text
+            <textarea id="srcText"></textarea> 
+        </div>  
+        <div>
+            reg Text
+            <textarea id="regText"></textarea> 
+        </div>
+        <div>
+            dst Text
+            <textarea id="dstText"></textarea> 
+        </div>
+        <div>
+            tweemoji parse result
+            <div id="dstEl">
+
+            </div>
+        </div>
+
+        <div>
+            <button id="testBtn">Test</button>
+            <button id="testStopBtn">Stop Test</button>
+            <button id="sampleBtn">Load Sample</button>
+            <button id="generateReg">Generate Regexp</button>
+            <button id="testReg">Test Generate Regexp</button>
+        </div>
+        <div>
+            <input type="checkbox" id="intervalCheck" /> <label for="intervalCheck">interval</label>
+        </div>
+
+
+        <div>
+            <input type="text" id="convertSrc" />
+            <button id="convertBtn">To Code </button>
+            
+        </div>
+        <div>
+            <input type="text" id="convertRet" />
+            <button id="pairBtn">To Pair </button>
+        </div>
+        <div>
+            <input type="text" id="pairRet" />
+        </div>
+        
+
+        <script>
+
+            var twemojiOption = {
+                callback: function (icon) {
+                    return './img/emoji/' + icon + '.png'
+                },
+
+                attributes: function () {
+                    return {'emoticon-id': 'emoji'}
+                }
+            };
+
+            var ex_re = /\u002A|\u2612|[\u261C-\u261F]|\uD83C\uDF23|\uD83D\uDD44|\uD83D\uDD46|\uD83D\uDD47|\uD83D[\uDD68-\uDD6A]|\uD83D\uDD6D|\uD83D\uDD8E|\uD83D[\uDD91-\uDD93]|\uD83D\uDDE2|\uD83D[\uDEC6-\uDEC7]|\u2661|\u2662|\u2664|\u2667|\u270E|\u2710|\uD83C[\uDC00-\uDC03]|\uD83C[\uDC05-\uDC19]|\uD83C[\uDC1A-\uDC29]|\uD83C[\uDC2A-\uDC2B]|\uD83C\uDF22|\uD83C\uDF94|\uD83C\uDF95|\uD83C\uDF98|\uD83C\uDF9C|\uD83C\uDF9D|\uD83C\uDFF1|\uD83C\uDFF2|\uD83C\uDFF6|\uD83D\uDCFE|\uD83D\uDD3E|\uD83D\uDD3F|\uD83D\uDD45|\uD83D\uDD48|\uD83D\uDD6B|\uD83D\uDD6C|\uD83D\uDD6E|\uD83D\uDD71|\uD83D\uDD72|\uD83D[\uDD7B-\uDD89]|\uD83D\uDD8F|\uD83D\uDD94|\uD83D[\uDD97-\uDDB0]|\uD83D[\uDDB3-\uDDD0]|\uD83D[\uDDD4-\uDDE0]|\uD83D[\uDDE4-\uDDEE]|\uD83D[\uDDF0-\uDDF9]|\uD83D[\uDEC8-\uDECA]|\uD83D[\uDEE6-\uDEE8]|\uD83D\uDEEA|\uD83D[\uDEF1-\uDEF2]|\uD83D[\uDDC8-\uDDCA]|\uD83D[\uDDE6-\uDDE8]|\uD83D\uDDEA|\uD83D\uDDF1|\uD83D\uDDF2|\u2605|[\u2607-\u2610]|[\u2616-\u2617]|[\u2619-\u261B]|\u2621|\u2624|\u2625|[\u2627-\u2629]|[\u262B-\u262D]|[\u2630-\u2637]|[\u263B-\u2647]|[\u2654-\u265F]|\u2669|[\u266A-\u267A]|[\u267C-\u267E]|[\u2680-\u2691]|\u2698|\u269A|[\u269D-\u269F]|[\u26A2-\u26A9]|[\u26AC-\u26AF]|[\u26B2-\u26BC]|[\u26BF-\u26C3]|\u26C6|\u26C7|\u26C9|[\u26CA-\u26CD]|\u26D0|\u26D2|[\u26D5-\u26E8]|[\u26EB-\u26EF]|\u26F6|\u26FB|\u26FC|\u26FE|\u26FF|\uD83D[\uDD40-\uDD43]|\u2765/ig;
+
+            var largeList = [0x1F5E2,0x1F6C6,0x1F6C7,0x1F56A,0x1F56D,0x1F58E,0x1F323,0x1F546,0x1F547,0x1F568,0x1F569,0x1F591,0x1F592,0x1F593,0x1F544,0x1F005,0x1F000,0x1F00A,0x1F00B,0x1F00C,0x1F00D,0x1F00E,0x1F00F,0x1F001,0x1F01A,0x1F01B,0x1F01C,0x1F01D,0x1F01E,0x1F01F,0x1F002,0x1F02A,0x1F02B,0x1F003,0x1F3F1,0x1F3F2,0x1F3F6,0x1F4FE,0x1F5A0,0x1F5A1,0x1F5A2,0x1F5A3,0x1F5A6,0x1F5A7,0x1F5A9,0x1F5AA,0x1F5AB,0x1F5AC,0x1F5AD,0x1F5AE,0x1F5AF,0x1F5B0,0x1F5B3,0x1F5B4,0x1F5B5,0x1F5B6,0x1F5B7,0x1F5B8,0x1F5B9,0x1F5BA,0x1F5BB,0x1F5BD,0x1F5BE,0x1F5BF,0x1F5C0,0x1F5C1,0x1F5C5,0x1F5C6,0x1F5C7,0x1F5C8,0x1F5C9,0x1F5CA,0x1F5CB,0x1F5CC,0x1F5CD,0x1F5CE,0x1F5CF,0x1F5D0,0x1F5D4,0x1F5D5,0x1F5D6,0x1F5D7,0x1F5D8,0x1F5D9,0x1F5DA,0x1F5DB,0x1F5DF,0x1F5E0,0x1F5E4,0x1F5E5,0x1F5E6,0x1F5E7,0x1F5E9,0x1F5EA,0x1F5EB,0x1F5EC,0x1F5ED,0x1F5EE,0x1F5F0,0x1F5F1,0x1F5F2,0x1F5F4,0x1F5F5,0x1F5F6,0x1F5F7,0x1F5F8,0x1F5F9,0x1F006,0x1F6C8,0x1F6C9,0x1F6CA,0x1F6E6,0x1F6E7,0x1F6E8,0x1F6EA,0x1F6F1,0x1F6F2,0x1F007,0x1F008,0x1F009,0x1F010,0x1F011,0x1F012,0x1F013,0x1F014,0x1F015,0x1F016,0x1F017,0x1F018,0x1F019,0x1F020,0x1F021,0x1F022,0x1F023,0x1F024,0x1F025,0x1F026,0x1F027,0x1F028,0x1F029,0x1F39C,0x1F39D,0x1F53E,0x1F53F,0x1F56B,0x1F56C,0x1F56E,0x1F57B,0x1F57C,0x1F57D,0x1F57E,0x1F57F,0x1F58F,0x1F59A,0x1F59B,0x1F59C,0x1F59D,0x1F59E,0x1F59F,0x1F322,0x1F394,0x1F395,0x1F398,0x1F540,0x1F541,0x1F542,0x1F543,0x1F545,0x1F548,0x1F571,0x1F572,0x1F580,0x1F581,0x1F582,0x1F583,0x1F584,0x1F585,0x1F586,0x1F588,0x1F589,0x1F594,0x1F597,0x1F598,0x1F599];
+            var smallList = [0x002A,0x26A2,0x26A3,0x26A4,0x26A5,0x26A6,0x26A7,0x26A8,0x26A9,0x26AC,0x26AD,0x26AE,0x26AF,0x26B2,0x26B3,0x26B4,0x26B5,0x26B6,0x26B7,0x26B8,0x26B9,0x26BA,0x26BB,0x26BC,0x26BF,0x26C0,0x26C1,0x26C2,0x26C3,0x26C6,0x26C7,0x26C9,0x26CA,0x26CB,0x26CC,0x26CD,0x26D0,0x26D2,0x26D5,0x26D6,0x26D7,0x26D8,0x26D9,0x26DA,0x26DB,0x26DC,0x26DD,0x26DE,0x26DF,0x26E0,0x26E1,0x26E2,0x26E3,0x26E4,0x26E5,0x26E6,0x26E7,0x26E8,0x26EB,0x26EC,0x26ED,0x26EE,0x26EF,0x26F6,0x26FB,0x26FC,0x26FE,0x26FF,0x260A,0x260B,0x260C,0x260D,0x260F,0x261A,0x261B,0x262B,0x262C,0x262D,0x263B,0x263C,0x263D,0x263E,0x263F,0x265A,0x265B,0x265C,0x265D,0x265E,0x265F,0x266A,0x266B,0x266C,0x266D,0x266E,0x266F,0x267A,0x267C,0x267D,0x267E,0x268A,0x268B,0x268C,0x268D,0x268E,0x268F,0x269A,0x269D,0x269E,0x269F,0x270E,0x2605,0x2607,0x2608,0x2609,0x2610,0x2616,0x2617,0x2619,0x2621,0x2624,0x2625,0x2627,0x2628,0x2629,0x2630,0x2631,0x2632,0x2633,0x2634,0x2635,0x2636,0x2637,0x2640,0x2641,0x2642,0x2643,0x2644,0x2645,0x2646,0x2647,0x2654,0x2655,0x2656,0x2657,0x2658,0x2659,0x2661,0x2662,0x2664,0x2667,0x2669,0x2670,0x2671,0x2672,0x2673,0x2674,0x2675,0x2676,0x2677,0x2678,0x2679,0x2680,0x2681,0x2682,0x2683,0x2684,0x2685,0x2686,0x2687,0x2688,0x2689,0x2690,0x2691,0x2698,0x2710,0x2765,0x261C,0x261E,0x261F,0x2612];
+
+
+            var emojiString = "";
+
+            var largeEmojiList = punycode.ucs2.encode(largeList);
+            var smallEmojiList = punycode.ucs2.encode(smallList);
+
+            emojiString = largeEmojiList + smallEmojiList;
+
+
+            console.log( "sample count : " + (largeEmojiList.length + smallEmojiList.length));
+
+            function parseEmoji( srcText){
+                $("#dstEl")[0].innerText = srcText;
+                twemoji.parse($("#dstEl")[0], twemojiOption); 
+            }
+
+            function findSurrogatePair(point) {
+            console.log( "findSurrogatePair : " + point);
+              var offset = point - 0x10000,
+                  lead = 0xd800 + (offset >> 10),
+                  trail = 0xdc00 + (offset & 0x3ff);
+              return [lead.toString(16), trail.toString(16)];
+            }
+
+
+            function regTest(reg){
+                if( typeof reg === "undefined"){
+                    reg = ex_re;
+                }
+
+                $("#dstText").val("");
+
+                var src = $("#srcText").val();
+
+                if( $("#intervalCheck").is(":checked")){   
+                    gIntervalId = setInterval( function(){
+                        var ret = reg.exec(src);
+                        if( !ret){
+                            clearInterval(gIntervalId);
+
+                            alert("all test is done")
+                        }
+                        else {
+                            var first = src.slice(0,ret.index);
+                            var second = src.slice(ret.index+ret[0].length);
+                            src = first + second;
+                            $("#dstText").val(src);
+
+                            parseEmoji( src);
+                        }
+                        reg.lastIndex = 0;
+                    }, 100);
+                } else {
+                    var ret = src.replace(reg, " ")
+                    $("#dstText").val(ret);
+                    parseEmoji( ret);
+
+                    alert("all test is done");
+                }
+            }
+
+
+            var gIntervalId = null;
+
+            $("#sampleBtn").click(function(){
+                $("#srcText").val(emojiString);
+            });
+
+            $("#testBtn").click(function(){
+                regTest();
+            });
+
+
+            $("#testStopBtn").click( function(){
+                if( gIntervalId)
+                    clearInterval(gIntervalId);
+            });
+
+            $("#convertBtn").click( function(){
+
+                var convertSrc = $("#convertSrc").val();
+
+                var retText = punycode.ucs2.decode(convertSrc);
+
+                console.log( "convert count : " + retText.length);
+                for( var prop in retText){
+                    retText[prop] = retText[prop].toString(16)
+                }
+                    
+
+                $("#convertRet").val(retText.join(" "));
+            });
+
+            $("#pairBtn").click( function(){
+                var srcText = $("#convertRet").val();
+                var srcList = srcText.split(" ");
+
+                var dstList = [];
+
+                if( srcList.length > 0 ){
+                    for( var prop in srcList){
+                        var src = srcList[prop];
+                        if( src.length > 4){
+                            var num = Number( "0x"+src);
+                            dstList.push(findSurrogatePair(num).join(" "));
+                        } else {
+                            dstList.push(src)
+                        }
+                    }
+                }
+
+                $("#pairRet").val();
+                $("#pairRet").val(dstList.join(" | "));
+
+            });
+
+ 
+
+            $("#generateReg").click( function(){
+
+                var reg = /[a-zA-Z0-9]/g;
+
+                $("#regText").val("");
+
+                var src = $("#srcText").val();
+                
+                var retText = punycode.ucs2.decode(src);
+
+                console.log( "src count  : " + src.length);
+                console.log( "char count  : " + retText.length);
+
+                for( var prop in retText){
+                    
+                        var codePoint = retText[prop].toString(16);
+                        if( codePoint.length > 4){
+                            var pairs = findSurrogatePair(retText[prop]);
+                            retText[prop] = "\\u" + pairs.join("\\u");
+                            console.log( "code : " + retText[prop] + " , index : " + prop);    
+                        } else {    
+                            retText[prop] = "\\u" + retText[prop].toString(16);
+                        }
+                    
+                }
+                    
+
+                $("#regText").val(retText.join("|"));
+                
+            });
+
+            $("#testReg").click( function(){
+                var regText = $("#regText").val();
+                var reg = new RegExp(regText, "gi");
+
+                regTest(reg);
+            });
+
+
+        </script>
+    </body>
+
+</html>
